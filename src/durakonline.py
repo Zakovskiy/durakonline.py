@@ -123,7 +123,7 @@ class Client:
 				"command":"get_captcha"
 			}
 		)
-		return self.__get_data("captcha")
+		return self._get_data("captcha")
 
 	def register(self, name, captcha:str=''):
 		self.send_server(
@@ -144,7 +144,7 @@ class Client:
 				"id":user_id
 			}
 		)
-		data = self.__get_data("user_info")
+		data = self._get_data("user_info")
 		if data["command"] == "err": raise objects.Err(data)
 		else: return objects.UserInfo(data).UserInfo
 
@@ -164,6 +164,15 @@ class Client:
 			}
 		)
 
+	def send_friend_request(self, user_id:int):
+		self.send_server(
+			{
+				"command":"friend_request",
+				"id":user_id
+			}
+		)
+		return self.listen()
+
 	def verify_purchase(self, signature, purchase_data):
 		self.send_server(
 			{
@@ -179,7 +188,7 @@ class Client:
 				"command":"get_android_purchase_ids"
 			}
 		)
-		return objects.PurchaseIds(self.__get_data("android_purchase_ids")).PurchaseIds
+		return objects.PurchaseIds(self._get_data("android_purchase_ids")).PurchaseIds
 
 	def get_prem_price(self):
 		self.send_server(
@@ -187,7 +196,7 @@ class Client:
 				"command":"get_prem_price"
 			}
 		)
-		return objects.ItemsPrice(self.__get_data("prem_price")).ItemsPrice
+		return objects.ItemsPrice(self._get_data("prem_price")).ItemsPrice
 
 	def get_points_price(self):
 		self.send_server(
@@ -195,7 +204,7 @@ class Client:
 				"command":"get_points_price"
 			}
 		)
-		return objects.ItemsPrice(self.__get_data("points_price")).ItemsPrice
+		return objects.ItemsPrice(self._get_data("points_price")).ItemsPrice
 
 	def buy_prem(self, id:int=0):
 		self.send_server(
@@ -276,7 +285,7 @@ class Client:
 				"command":"get_assets"
 			}
 		)
-		return objects.Assets(self.__get_data("assets")).Assets
+		return objects.Assets(self._get_data("assets")).Assets
 
 	def asset_select(self, asset_id):
 		self.send_server(
@@ -366,7 +375,7 @@ class Client:
 				"command":"gb"
 			}
 		)
-		return objects.Bets(self.__get_data("bets")).Bets
+		return objects.Bets(self._get_data("bets")).Bets
 
 	def create_game(self, bet, password:str="", players:int=3, deck:int=24, fast:bool=True):
 		self.send_server(
@@ -384,7 +393,7 @@ class Client:
 			}
 		)
 
-		data = self.__get_data("create")
+		data = self._get_data("game")
 		if data["command"] == 'err': raise objects.Err(data)
 		else: return objects.Game(data).Game 
 
@@ -502,7 +511,7 @@ class Client:
 		del self.receive[0]
 		return r
 
-	def __get_data(self, type):
+	def _get_data(self, type):
 		data = self.listen()
 		while 1:
 			if data["command"] in [type,"err"]:
