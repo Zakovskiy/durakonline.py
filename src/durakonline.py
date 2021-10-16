@@ -19,8 +19,8 @@ class Client:
 		self.create_connection()
 		logger.remove()
 		logger.add(sys.stderr, format="{time:HH:mm:ss.SSS}: {message}", level="DEBUG" if debug else "INFO")
+		self.sign(self.get_session_key().key)
 		if token:
-			self.sign(self.get_session_key().key)
 			self.signin_by_access_token(token)
 
 	def create_connection(self):
