@@ -1,7 +1,7 @@
 
 <h1 align="center">
   <br>
-  <a href="https://github.com/Zakovskiy/durakonline.py"><img src="https://github.com/Zakovskiy/durakonline.py/blob/master/icon.png?raw=true" width="500"></a>
+  <a href="https://github.com/Zakovskiy/durakonline.py"><img src="https://github.com/Zakovskiy/durakonline.py/blob/main/icon.png?raw=true" width="500"></a>
   <br>
   Durak Online API on Python
   <br>
