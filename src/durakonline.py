@@ -48,7 +48,6 @@ class Client:
 				try:
 					message = json.loads(i[pos:])
 				except Exception:
-					message = {}
 					continue
 				message['command'] = command
 				logger.debug(message)
