@@ -7,6 +7,10 @@
   <br>
 </h1>
 
+<p align="center">
+  <a href="https://discord.gg/AsYzxRfT6J"><img src="https://bit.ly/32neyjM"></a>
+</p>
+
 # Install
 ```
 git clone https://github.com/Zakovskiy/durakonline.py
