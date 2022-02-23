@@ -1,72 +1,32 @@
-from utils import objects
-from datetime import datetime
-from loguru import logger
 import sys
 import socket
 import json
 import threading
 import base64
 import hashlib
+from utils import objects
+from datetime import datetime
+from loguru import logger
+from socket_listener import SocketListener
 
 
-class Client:
+class Client(SocketListener):
 
-    def __init__(self, token: str = None, pl: str = "ios", debug: bool = False, language: str = "ru", tag: str = ""):
+    def __init__(self, token: str = None, server_id: str = None, pl: str = "ios", debug: bool = False, language: str = "ru", tag: str = ""):
+        super().__init__(self)
         self.pl = pl
         self.tag = tag
         self.language = language
         self.uid = None
         self.receive = []
+        self.api_url = "http://static.rstgames.com/durak/"
         self.logger = logger
-        self.create_connection()
+        self.create_connection(server_id)
         self.logger.remove()
-        self.logger.add(
-            sys.stderr, format="{time:HH:mm:ss.SSS}: {message}", level="DEBUG" if debug else "INFO")
+        self.logger.add(sys.stderr, format="{time:HH:mm:ss.SSS}: {message}", level="DEBUG" if debug else "INFO")
         self.sign(self.get_session_key().key)
         if token:
             self.signin_by_access_token(token)
-
-    def create_connection(self):
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket.settimeout(5000)
-        self.client_socket.connect(('65.21.92.165', 10773))
-        self.client_socket.settimeout(None)
-        threading.Thread(target=self.receive_messages).start()
-
-    def receive_messages(self):
-        self.logger.debug("Start listener")
-        while True:
-            buffer = bytes()
-            while True:
-                r = self.client_socket.recv(4096)
-                buffer = buffer + r
-                read = len(r)
-                if read != -1:
-                    try:
-                        d = buffer.decode()
-                    except:
-                        continue
-                    if d.endswith('\n'):
-                        buffer = bytes()
-                        for str in d.strip().split('\n'):
-                            str = str[0:-1]
-                            pos = str.find('{')
-                            command = str[:pos]
-                            try:
-                                message = json.loads(str[pos:]+"}")
-                            except Exception:
-                                continue
-                            message['command'] = command
-                            self.logger.debug(f"{self.tag}: {message}")
-                            self.receive.append(message)
-                    else:
-                        buffer = buffer + r
-                else:
-                    return
-
-    def send_server(self, data: dir):
-        self.client_socket.send((data.pop(
-            'command')+json.dumps(data, separators=(',', ':')).replace("{}", '')+'\n').encode())
 
     def get_session_key(self):
         data = {
@@ -91,7 +51,6 @@ class Client:
                 "and": 28,
                 "n": f"durak.{self.pl}"
             })
-        print(data)
         self.send_server(
             data
         )
@@ -522,17 +481,3 @@ class Client:
                 "command": "pass"
             }
         )
-
-    def listen(self):
-        while len(self.receive) == 0:
-            pass
-        r = self.receive[0]
-        del self.receive[0]
-        return r
-
-    def _get_data(self, type):
-        data = self.listen()
-        while 1:
-            if data["command"] in [type, "err"]:
-                return data
-            data = self.listen()
