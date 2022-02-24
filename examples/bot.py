@@ -2,7 +2,7 @@ import durakonline, json
 
 Durak = durakonline.Client("access_token")
 
-@durak.event(command="user_msg")
+@Durak.event(command="user_msg")
 def event(data):
     try:
         user_id = data["from"]
