@@ -2,114 +2,37 @@ import sys
 import socket
 import json
 import threading
-import base64
-import hashlib
-from utils import objects
+from .utils import objects
 from datetime import datetime
 from loguru import logger
-from socket_listener import SocketListener
+from .socket_listener import SocketListener
 
+from .authorization import Authorization
+from .game import Game
 
 class Client(SocketListener):
 
-    def __init__(self, token: str = None, server_id: str = None, pl: str = "ios", debug: bool = False, language: str = "ru", tag: str = ""):
+    def __init__(self, token: str = None, server_id: str = None, pl: str = "ios",
+        debug: bool = False, language: str = "ru", tag: str = ""):
         super().__init__(self)
+        self.api_url = "http://static.rstgames.com/durak/"
         self.pl = pl
         self.tag = tag
         self.language = language
         self.uid = None
         self.receive = []
-        self.api_url = "http://static.rstgames.com/durak/"
         self.logger = logger
-        self.create_connection(server_id)
         self.logger.remove()
         self.logger.add(sys.stderr, format="{time:HH:mm:ss.SSS}: {message}", level="DEBUG" if debug else "INFO")
-        self.sign(self.get_session_key().key)
+        self.create_connection(server_id)
+        self.load_classes()
+        self.authorization.sign(self.authorization.get_session_key().key)
         if token:
-            self.signin_by_access_token(token)
+            self.authorization.signin_by_access_token(token)
 
-    def get_session_key(self):
-        data = {
-            "command": "c",
-            "l": self.language,
-            "tz": "+02:00",
-            "t": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]+"Z",
-            "pl": self.pl,
-            "p": 10
-        }
-        if self.pl == "ios":
-            data.update({
-                "v": "1.9.1.2",
-                "ios": "14.4",
-                "d": "iPhone8,4",
-                "n": "durak.ios"
-            })
-        else:
-            data.update({
-                "v": "1.9.2",
-                "d": "xiaomi cactus",
-                "and": 28,
-                "n": f"durak.{self.pl}"
-            })
-        self.send_server(
-            data
-        )
-        return objects.GetSessionKey(self.listen()).GetSessionKey
-
-    def sign(self, key):
-        hash = base64.b64encode(hashlib.md5(
-            (key+"oc3q7ingf978mx457fgk4587fg847").encode()).digest()).decode()
-        self.send_server(
-            {
-                "command": "sign",
-                "hash": hash
-            }
-        )
-        return self.listen()
-
-    def signin_by_access_token(self, token):
-        self.token = token
-        self.send_server(
-            {
-                "command": "auth",
-                "token": self.token
-            }
-        )
-        authorized = self.listen()
-        if authorized["command"] == "err":
-            raise objects.Err(authorized)
-        self.uid = authorized["id"]
-        return self.uid
-
-    def google_auth(self, id_token: str):
-        self.send_server(
-            {
-                "command": "durak_google_auth",
-                "id_token": id_token
-            }
-        )
-
-    def get_captcha(self):
-        self.send_server(
-            {
-                "command": "get_captcha"
-            }
-        )
-        return self._get_data("captcha")
-
-    def register(self, name, captcha: str = ''):
-        self.send_server(
-            {
-                "command": "register",
-                "name": name,
-                "captcha": captcha
-            }
-        )
-        data = self.listen()
-        if data["command"] == "err":
-            raise objects.Err(data)
-        else:
-            return objects.Register(data).Register
+    def load_classes(self):
+        self.authorization: Authorization = Authorization(self)
+        self.game: Game = Game(self)
 
     def get_user_info(self, user_id: int):
         self.send_server(
@@ -222,39 +145,6 @@ class Client(SocketListener):
 
         return friends
 
-    def join_to_game(self, password: str, game_id):
-        self.send_server(
-            {
-                "command": "join",
-                "password": password,
-                "id": game_id
-            }
-        )
-
-    def rejoin_to_game(self, position, game_id):
-        self.send_server(
-            {
-                "command": "rejoin",
-                "p": position,
-                "id": game_id
-            }
-        )
-
-    def leave(self, game_id):
-        self.send_server(
-            {
-                "command": "leave",
-                "id": game_id
-            }
-        )
-
-    def game_publish(self):
-        self.send_server(
-            {
-                "command": "game_publish"
-            }
-        )
-
     def get_assets(self):
         self.send_server(
             {
@@ -267,7 +157,7 @@ class Client(SocketListener):
         self.send_server(
             {
                 "command": "asset_select",
-                "id": asset
+                "id": asset_id
             }
         )
 
@@ -276,36 +166,6 @@ class Client(SocketListener):
             {
                 "command": "achieve_select",
                 "id": achieve_id
-            }
-        )
-
-    def send_smile_game(self, smile_id: int = 16):
-        self.send_server(
-            {
-                "command": "smile",
-                "id": smile_id
-            }
-        )
-
-    def ready(self):
-        self.send_server(
-            {
-                "command": "ready"
-            }
-        )
-
-    def surrender(self):
-        self.send_server(
-            {
-                "command": "surrender"
-            }
-        )
-
-    def player_swap(self, position: int):
-        self.send_server(
-            {
-                "command": "player_swap",
-                "id": position
             }
         )
 
@@ -344,6 +204,7 @@ class Client(SocketListener):
                 "to_id": to
             }
         )
+        return self.listen()
 
     def get_bets(self):
         self.send_server(
@@ -352,36 +213,6 @@ class Client(SocketListener):
             }
         )
         return objects.Bets(self._get_data("bets")).Bets
-
-    def create_game(self, bet, password: str = "", players: int = 3, deck: int = 24, fast: bool = True):
-        self.send_server(
-            {
-                "command": "create",
-                "bet": bet,
-                "password": password,
-                "fast": fast,
-                "sw": True,
-                "nb": True,
-                "ch": False,
-                "players": players,
-                "deck": deck,
-                "dr": True
-            }
-        )
-
-        data = self._get_data("game")
-        if data["command"] == 'err':
-            raise objects.Err(data)
-        else:
-            return objects.Game(data).Game
-
-    def invite_to_game(self, user_id):
-        self.send_server(
-            {
-                "command": "invite_to_game",
-                "user_id": user_id
-            }
-        )
 
     def lookup_start(self, betMin: int = 100, pr: bool = False, betMax: int = 2500, fast: bool = True, sw: bool = True, nb: list = [False, True], ch: bool = False, players: list = [2, 3, 4, 5, 6], deck: list = [24, 36, 52], dr: bool = True):
         self.send_server(
@@ -457,27 +288,5 @@ class Client(SocketListener):
                 "command": "lb_get_by_place_down",
                 "place": place,
                 "type": type
-            }
-        )
-
-    def turn(self, card):
-        self.send_server(
-            {
-                "command": "t",
-                "c": card
-            }
-        )
-
-    def take(self):
-        self.send_server(
-            {
-                "command": "take"
-            }
-        )
-
-    def _pass(self):
-        self.send_server(
-            {
-                "command": "pass"
             }
         )
