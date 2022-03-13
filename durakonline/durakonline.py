@@ -62,6 +62,7 @@ class Client(SocketListener):
                 "id": friend_id
             }
         )
+        return self._get_data("fl_delete")
 
     def send_friend_request(self, user_id: int):
         self.send_server(
@@ -131,16 +132,17 @@ class Client(SocketListener):
             }
         )
 
-    def get_friend_list(self):
+    def get_friend_list(self) -> [objects.FriendInfo]:
         self.send_server(
             {
                 "command": "friend_list"
             }
         )
-        friends = []
+        friends: [objects.FriendInfo] = []
         data = self.listen()
         while data["command"] != "img_msg_price":
-            friends.append(objects.FriendInfo(data).FriendInfo)
+            if data["command"] == "fl_update":
+                friends.append(objects.FriendInfo(data).FriendInfo)
             data = self.listen()
 
         return friends
@@ -175,6 +177,14 @@ class Client(SocketListener):
                 "command": "send_user_msg",
                 "msg": content,
                 "to": to
+            }
+        )
+
+    def complaint(self, to_id):
+        self.send_server(
+            {
+                "command": "complaint",
+                "id": to_id,
             }
         )
 

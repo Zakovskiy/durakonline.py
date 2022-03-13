@@ -85,7 +85,4 @@ class Authorization:
                 "captcha": captcha,
             }
         )
-        data = self.client.listen()
-        if data["command"] == "err":
-            raise objects.Err(data)
-        return objects.Register(data).Register
+        return objects.Register(self.client._get_data("set_token")).Register

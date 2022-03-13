@@ -92,16 +92,17 @@ class SocketListener:
                     self.socket.close()
                     return
 
-    def listen(self):
+    def listen(self, force: bool = False):
         while len(self.receive) == 0:
-            pass
+            if force:
+                return {"command": "empty"}
         r = self.receive[0]
         del self.receive[0]
         return r
 
-    def _get_data(self, type):
-        data = self.listen()
+    def _get_data(self, type, force: bool = False):
+        data = self.listen(force=force)
         while 1:
-            if data["command"] in [type, "err"]:
+            if data["command"] in [type, "err", "empty"]:
                 return data
-            data = self.listen()
+            data = self.listen(force=force)

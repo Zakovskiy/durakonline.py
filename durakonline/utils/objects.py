@@ -53,7 +53,7 @@ class Register:
 
 class User:
 
-	def __init__ (self, data:dir):
+	def __init__ (self, data: dict):
 		self.json = data
 		self.id = None
 		self.name = None
@@ -79,16 +79,17 @@ class User:
 
 class FriendInfo:
 
-	def __init__ (self, data:dir):
+	def __init__ (self, data: dict):
 		self.json = data
-		self.user : User = User(data["user"]).User
+		self.user: User = None
 		self.kind = None
 		self.new = None
 
 	@property
 	def FriendInfo(self):
-		self.kind = self.json["kind"]
-		self.new = self.json["new"]
+		self.kind = self.json.get("kind")
+		self.new = self.json.get("new")
+		self.user = User(self.json.get("user")).User
 		return self
 	
 
@@ -285,15 +286,15 @@ class Game:
 
 	@property
 	def Game(self):
-		self.id = self.json["id"]
-		self.players = self.json["players"]
-		self.position = self.json["position"]
-		self.deck = self.json["deck"]
-		self.timeout = self.json["timeout"]
-		self.sw = self.json["sw"]
-		self.ch = self.json["ch"]
-		self.dr = self.json["dr"]
-		self.nb = self.json["nb"]
-		self.bet = self.json["bet"]
-		self.fast = self.json["fast"]
+		self.id = self.json.get("id")
+		self.players = self.json.get("players")
+		self.position = self.json.get("position")
+		self.deck = self.json.get("deck")
+		self.timeout = self.json.get("timeout")
+		self.sw = self.json.get("sw")
+		self.ch = self.json.get("ch")
+		self.dr = self.json.get("dr")
+		self.nb = self.json.get("nb")
+		self.bet = self.json.get("bet")
+		self.fast = self.json.get("fast")
 		return self

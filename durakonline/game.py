@@ -6,20 +6,21 @@ class Game:
     def __init__(self, client):
         self.client = client
 
-    def create(self, bet, password: str = "", players: int = 3,
-        deck: int = 24, fast: bool = True) -> objects.Game:
+    def create(self, bet, password: str = "", players: int = 6,
+        deck: int = 24, fast: bool = False, sw: bool = True,
+        nb: bool = True, ch: bool = False, dr: bool = True) -> objects.Game:
         self.client.send_server(
             {
                 "command": "create",
                 "bet": bet,
                 "password": password,
                 "fast": fast,
-                "sw": True,
-                "nb": True,
-                "ch": False,
+                "sw": sw,
+                "nb": nb,
+                "ch": ch,
                 "players": players,
                 "deck": deck,
-                "dr": True,
+                "dr": dr,
             }
         )
 
