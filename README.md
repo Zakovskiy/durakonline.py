@@ -20,7 +20,7 @@ git clone https://github.com/Zakovskiy/durakonline.py
 ```python
 import durakonline
 
-DurakOnline = durakonline.Client("access_token");
+DurakOnline = durakonline.Client("access_token")
 ```
 
 ### [Telegram](https://t.me/zakovskiy)
