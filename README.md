@@ -13,12 +13,12 @@
 
 # Install
 ```
-git clone https://github.com/Zakovskiy/durakonline.py
+pip3 install durakonline.py
 ```
 
 # Import and Auth
 ```python
-import durakonline
+from durakonline import durakonline
 
 DurakOnline = durakonline.Client("access_token")
 ```
