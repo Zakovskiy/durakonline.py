@@ -65,6 +65,7 @@ class SocketListener:
                 buffer = buffer + r
                 read = len(r)
                 if read != -1:
+                    if read in [0, 1]: continue
                     try:
                         d = buffer.decode()
                     except:
@@ -77,7 +78,7 @@ class SocketListener:
                             command = str[:pos]
                             try:
                                 message = json.loads(str[pos:]+"}")
-                            except Exception:
+                            except Exception as e:
                                 continue
                             message['command'] = command
                             self.logger.debug(f"{self.tag}: {message}")
@@ -87,7 +88,7 @@ class SocketListener:
                                         handler(message)
                             self.receive.append(message)
                     else:
-                        buffer = buffer + r
+                        continue
                 else:
                     self.socket.close()
                     return
