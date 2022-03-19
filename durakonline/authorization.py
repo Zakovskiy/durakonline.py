@@ -12,7 +12,7 @@ class Authorization:
     def get_session_key(self) -> objects.GetSessionKey:
         data = {
             "command": "c",
-            "l": self.client.language,
+            "l": "ru",
             "tz": "+02:00",
             "t": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]+"Z",
             "pl": self.client.pl,
@@ -54,10 +54,11 @@ class Authorization:
                 "token": self.client.token,
             }
         )
-        authorized = self.client.listen()
+        authorized = self.client._get_data("authorized")
         if authorized["command"] == "err":
             raise objects.Err(authorized)
         self.client.uid = authorized["id"]
+        self.client.logger.debug(f"{self.client.tag}: Success auth")
         return authorized["id"]
 
     def google_auth(self, id_token: str) -> dict:

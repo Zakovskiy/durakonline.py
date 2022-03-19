@@ -12,7 +12,7 @@ class SocketListener:
         self.socket = None
         self.handlers = {}
 
-    def create_connection(self, server_id: str = None):
+    def create_connection(self, server_id: str = None, ip: str = None, port: int = None):
         """
         **Parametrs**
             - server_id ::
@@ -32,18 +32,33 @@ class SocketListener:
                 "uD" - Alexandrite
                 None - random
         """
-        servers = self.get_servers()["user"]
-        server = servers[server_id] if server_id else list(random.choice(list(servers.items())))[1]
+        if not ip:
+            servers = self.get_servers()["user"]
+            server = servers[server_id] if server_id else list(random.choice(list(servers.items())))[1]
+            ip = server["host"]
+            port = server["port"]
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((server["host"], server["port"]))
-        self.logger.debug(f"{self.tag}: Start socket on server {server['name']['en']}")
+        try:
+            self.socket.connect((ip, port))
+        except Exception as e:
+            if "error" in self.handlers:
+                self.handlers["error"](e)
         threading.Thread(target=self.receive_messages).start()
 
     def send_server(self, data: dir):
-        self.socket.send((data.pop('command')+json.dumps(data, separators=(',', ':')).replace("{}", '')+'\n').encode())
+        try:
+            self.socket.send((data.pop('command')+json.dumps(data, separators=(',', ':')).replace("{}", '')+'\n').encode())
+        except Exception as e:
+            if "error" in self.handlers:
+                self.handlers["error"](e)
 
     def get_servers(self):
-        return requests.get(f"{self.api_url}servers.json").json()
+        try:
+            response = requests.get(f"{self.api_url}servers.json").json()
+        except Exception as e:
+            if "error" in self.handlers:
+                self.handlers["error"](e)
+        return response
 
     def event(self, command: str = "all"):
         def register_handler(handler):
@@ -55,13 +70,24 @@ class SocketListener:
 
         return register_handler
 
+    def error(self):
+        def register_handler(handler):
+            self.handlers["error"] = handler
+            return handler
+
+        return register_handler
 
     def receive_messages(self):
         self.logger.debug(f"{self.tag}: Start listener")
         while True:
             buffer = bytes()
             while True:
-                r = self.socket.recv(4096)
+                try:
+                    r = self.socket.recv(4096)
+                except Exception as e:
+                    if "error" in self.handlers:
+                        self.handlers["error"](e)
+                        return
                 buffer = buffer + r
                 read = len(r)
                 if read != -1:
@@ -104,6 +130,6 @@ class SocketListener:
     def _get_data(self, type, force: bool = False):
         data = self.listen(force=force)
         while 1:
-            if data["command"] in [type, "err", "empty"]:
+            if data["command"] in [type, "err", "empty", "alert"]:
                 return data
             data = self.listen(force=force)

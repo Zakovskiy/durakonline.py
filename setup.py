@@ -5,7 +5,7 @@ with open("README.md", "r") as stream:
 
 setup(
     name = "durakonline.py",
-    version = "3.2.2",
+    version = "3.3.0",
     url = "https://github.com/Zakovskiy/durakonline.py",
     download_url = "https://github.com/Zakovskiy/durakonline.py/tarball/master",
     license = "MIT",
@@ -34,8 +34,6 @@ setup(
         "setuptools",
         "requests",
         "loguru",
-        "websockets",
-        "websocket-client==0.57.0",
         "aiohttp"
     ],
     setup_requires = [
