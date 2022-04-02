@@ -9,6 +9,7 @@ class SocketListener:
 
     def __init__(self, client):
         self.client = client
+        self.alive = False
         self.socket = None
         self.handlers = {}
 
@@ -43,6 +44,7 @@ class SocketListener:
         except Exception as e:
             if "error" in self.handlers:
                 self.handlers["error"](e)
+        self.alive = True
         threading.Thread(target=self.receive_messages).start()
 
     def send_server(self, data: dir):
@@ -79,15 +81,16 @@ class SocketListener:
 
     def receive_messages(self):
         self.logger.debug(f"{self.tag}: Start listener")
-        while True:
+        while self.alive:
             buffer = bytes()
-            while True:
+            while self.alive:
                 try:
                     r = self.socket.recv(4096)
                 except Exception as e:
                     if "error" in self.handlers:
                         self.handlers["error"](e)
-                        return
+                    self.alive = False
+                    return
                 buffer = buffer + r
                 read = len(r)
                 if read != -1:
