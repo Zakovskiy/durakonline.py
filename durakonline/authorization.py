@@ -36,8 +36,7 @@ class Authorization:
         return objects.GetSessionKey(self.client.listen()).GetSessionKey
 
     def sign(self, key: str) -> dict:
-        hash = base64.b64encode(hashlib.md5(
-            (key+"oc3q7ingf978mx457fgk4587fg847").encode()).digest()).decode()
+        hash = base64.b64encode(hashlib.md5((key+"oc3q7ingf978mx457fgk4587fg847").encode()).digest()).decode()
         self.client.send_server(
             {
                 "command": "sign",
@@ -59,6 +58,11 @@ class Authorization:
             raise objects.Err(authorized)
         self.client.uid = authorized["id"]
         self.client.logger.debug(f"{self.client.tag}: Success auth")
+        data = self.client._get_data("uu")
+        while data["k"] != "dtp":
+            if data.get("v"):
+                self.client.info[data["k"]] = data["v"]
+            data = self.client._get_data("uu")
         return authorized["id"]
 
     def google_auth(self, id_token: str) -> dict:

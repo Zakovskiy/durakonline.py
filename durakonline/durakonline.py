@@ -23,6 +23,7 @@ class Client(SocketListener):
         self.tag = tag
         self.uid = None
         self.receive = []
+        self.info = {}
         self.logger = logger
         self.logger.remove()
         self.logger.add(sys.stderr, format="{time:HH:mm:ss.SSS}: {message}", level="DEBUG" if debug else "INFO")
