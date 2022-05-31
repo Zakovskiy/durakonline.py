@@ -48,7 +48,7 @@ class Friend:
         return friends
 
     def send_message(self, content, to) -> None:
-        self.send_server(
+        self.client.send_server(
             {
                 "command": "send_user_msg",
                 "msg": content,
