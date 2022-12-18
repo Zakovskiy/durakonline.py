@@ -64,14 +64,11 @@ class Game:
         )
 
     def publish(self) -> None:
-        exceptions = ["FOOL_MAP", "FOOL_MAP", "FOOL_MAP", "FOOL_MAP", "FOOL_MAP", "FOOL_MAP", "zakovskiy"]
-        for key in exceptions:
-            if key in self.client.info["name"]:
-                return self.client.send_server(
-                    {
-                        "command": "game_publish",
-                    }
-                )
+        return self.client.send_server(
+            {
+                "command": "game_publish",
+            }
+        )
 
     def send_smile(self, smile_id: int = 16) -> None:
         self.client.send_server(
