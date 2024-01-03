@@ -1,300 +1,211 @@
+from msgspec import Struct
+from typing import List, Optional
+from .enums import Kind, Group
+
+
 class Err(Exception):
-
-	def __init__ (self, data:dir):
-		self.json = data
-		try: self.code = data["code"]
-		except: self.code = None
-
-class GetSessionKey:
-
-	def __init__ (self, data:dir):
-		self.json = data
-		self.key = None
-
-	@property
-	def GetSessionKey (self):
-		self.key = self.json["key"]
-		return self
-
-class Server:
-
-	def __init__ (self, data:dir):
-		self.json = data
-		self.time = None
-		self.id = None
-
-	@property
-	def Server (self):
-		self.time = self.json["time"]
-		self.id = self.json["id"]
-		return self
-
-class SigninByAccessToken:
-
-	def __init__ (self, data:dir):
-		self.json = data
-		self.id = None
-
-	@property
-	def SigninByAccessToken(self):
-		self.id = self.json["id"]
-		return self
-
-class Register:
-
-	def __init__ (self, data:dir):
-		self.json = data
-		self.token = None
-
-	@property
-	def Register(self):
-		self.token = self.json["token"]
-		return self
-
-class User:
-
-	def __init__ (self, data: dict):
-		self.json = data
-		self.id = None
-		self.name = None
-		self.avatar = None
-		self.dtp = None
-		self.frame = None
-		self.score = None
-		self.achieve = None
-		self.pw = None
-
-	@property
-	def User(self):
-		self.id = self.json["id"]
-		self.name = self.json["name"]
-		self.avatar = self.json["avatar"]
-		self.dtp = self.json["dtp"]
-		self.frame = self.json["frame"]
-		self.score = self.json["score"]
-		self.achieve = self.json["achieve"]
-		self.pw = self.json["pw"]
-		return self
-	
-
-class FriendInfo:
-
-	def __init__ (self, data: dict):
-		self.json = data
-		self.user: User = None
-		self.kind = None
-		self.new = None
-
-	@property
-	def FriendInfo(self):
-		self.kind = self.json.get("kind")
-		self.new = self.json.get("new")
-		self.user = User(self.json.get("user")).User
-		return self
-	
-
-class UserInfo:
-
-	def __init__ (self, data:dir):
-		self.json = data
-		self.id = None
-		self.name = None
-		self.avatar = None
-		self.pw = None
-		self.ach = []
-		self.ach_c = None
-		self.t_bronze = None
-		self.t_silver = None
-		self.t_gold = None
-		self.wins = None
-		self.wins_season = None
-		self.points_win = None
-		self.points_win_season = None
-		self.score = None
-		self.score_season = None
-		self.dtp = None
-		self.frame = None
-		self.assets = []
-		self.achieve = None
-		self.achieves = []
-		self.coll = {}
-
-	@property
-	def UserInfo(self):
-		self.id = self.json["id"]
-		self.name = self.json["name"]
-		self.avatar = self.json["avatar"]
-		self.pw = self.json["pw"]
-		self.ach = self.json["ach"]
-		self.ach_c = self.json["achc"]
-		self.t_bronze = self.json["t_bronze"]
-		self.t_silver = self.json["t_silver"]
-		self.t_gold = self.json["t_gold"]
-		self.wins = self.json["wins"]
-		self.wins_season = self.json["wins_s"]
-		self.points_win = self.json["points_win"]
-		self.points_win_season = self.json["points_win_s"]
-		self.score = self.json["score"]
-		self.score_season = self.json["score_s"]
-		self.dtp = self.json["dtp"]
-		self.frame = self.json["frame"]
-		self.assets = self.json["assets"]
-		self.achieve = self.json["achieve"]
-		self.achieves = self.json["achieves"]
-		self.coll = self.json["coll"]
-		return self
-
-class Smile:
-
-	def __init__ (self, data:dir):
-		self.json = data
-		self.id = None
-		self.index = None
-		self.mask = None
-		self.level = None
-		self.price = None
-		self.name = None
-		self.description = None
-
-	@property
-	def Smile(self):
-		self.id = self.json["id"]
-		self.index = self.json["index"]
-		self.mask = self.json["mask"]
-		self.level = self.json["level"]
-		self.price = self.json["price"]
-		self.name = self.json["name"]["ru"]
-		self.description = self.json["desc"]["ru"]
-		return self
-
-class Frame:
-
-	def __init__ (self, data:dir):
-		self.json = data
-
-	@property
-	def Frame(self):
-		return Shirt(self.json).Shirt
+    def __init__ (self, data:dir):
+        self.json = data
+        self.code = data.get("code", None)
 
 
-class Shirt:
+class FormatLanguage(Struct):
+    ru: str
+    en: str
 
-	def __init__ (self, data:dir):
-		self.json = data
-		self.id = None
-		self.index = None
-		self.mask = None
-		self.level = None
-		self.price = None
-		self.name = None
-		self.description = None
-		self.hidden = None
-		self.group = None
 
-	@property
-	def Shirt(self):
-		self.id = self.json["id"]
-		self.index = self.json["index"]
-		self.mask = self.json["mask"]
-		self.level = self.json["level"]
-		self.price = self.json["price"]
-		self.name = self.json["name"]["ru"]
-		try: self.description = self.json["desc"]["ru"]
-		except: pass
-		self.hidden = self.json["hidden"]
-		self.group = self.json["group"]
-		return self
+class GetSessionKey(Struct):
+    key: str
 
-class Assets:
 
-	def __init__ (self, data:dir):
-		self.json = data
-		self.smile = []
-		self.shirt = []
+class Server(Struct):
+    time: str
+    id: int
 
-	@property
-	def Assets (self):
-		for smile in self.json["smile"]:
-			self.smile.append(Smile(smile).Smile)
-		return self
 
-class ItemsPrice:
+class SigninByAccessToken(Struct):
+    id: int
 
-	def __init__ (self, data:dir):
-		self.json = data
-		self.ids = []
 
-	@property
-	def ItemsPrice(self):
-		for id in self.json["ids"]:
-			self.ids.append(ItemPrice(id).ItemPrice)
-		return self
+class Register(Struct):
+    token: str
 
-class PurchaseIds:
 
-	def __init__ (self, data:dir):
-		self.json = data
-		self.ids = None
+class User(Struct):
+    id: int
+    name: str
+    avatar: Optional[str]
+    dtp: str
+    frame: str
+    achieve: str
+    pw: int
 
-	@property
-	def PurchaseIds(self):
-		self.ids = self.json["ids"]
-		return self
 
-class Bets:
+class FriendInfo(Struct):
+    user: User
+    kind: Kind
+    new: bool
 
-	def __init__ (self, data:dir):
-		self.json = data
-		self.v = []
 
-	@property
-	def Bets(self):
-		self.v = self.json["v"]
-		return self
-	
+class UserInfo(Struct):
+    id: int
+    name: str
+    avatar: Optional[str]
+    pw: int
+    wins: int
+    points_win: int
+    score: int
+    dtp: str
+    frame: str
+    achieve: str
+    t_bronze: int = 0
+    t_silver: int = 0
+    t_gold: int = 0
+    wins_s: int = 0
+    points_win_s: int = 0
+    score_s: int = 0
+    ach: List[int] = []
+    achieves: List[str] = []
+    assets: List[str] = []
+    coll: dict = {}
 
-class ItemPrice:
 
-	def __init__(self, data:dir):
-		self.json = data
-		self.price = None
-		self.quantity = None
-		self.id = None
+class Achieve(Struct):
+    id: str
+    index: int
+    mask: int
+    level: int
+    sort: int
+    name: FormatLanguage
+    desc: Optional[FormatLanguage] = None
+    price: Optional[int] = None
+    hidden: bool = False
 
-	@property
-	def ItemPrice(self):
-		self.price = self.json["price"]
-		self.quantity = self.json["quantity"]
-		self.id = self.json["id"]
-		return self
 
-class Game:
+class Achieves(Struct):
+    items: List[Achieve]
 
-	def __init__ (self, data:dir):
-		self.json = data
-		self.id = None
-		self.players = None
-		self.position = None
-		self.deck = None
-		self.timeout = None
-		self.sw = None
-		self.ch = None
-		self.dr = None
-		self.nb = None
-		self.bet = None
-		self.fast = None
 
-	@property
-	def Game(self):
-		self.id = self.json.get("id")
-		self.players = self.json.get("players")
-		self.position = self.json.get("position")
-		self.deck = self.json.get("deck")
-		self.timeout = self.json.get("timeout")
-		self.sw = self.json.get("sw")
-		self.ch = self.json.get("ch")
-		self.dr = self.json.get("dr")
-		self.nb = self.json.get("nb")
-		self.bet = self.json.get("bet")
-		self.fast = self.json.get("fast")
-		return self
+class Smile(Struct):
+    id: str
+    index: int
+    mask: int
+    level: int
+    name: FormatLanguage
+    desc: Optional[FormatLanguage] = None
+    price: Optional[int] = None
+    hidden: bool = False
+    group: Group = Group.EMPTY
+
+
+class Frame(Struct):
+    id: str
+    index: int
+    mask: int
+    level: int
+    name: FormatLanguage
+    hidden: bool
+    desc: Optional[FormatLanguage] = None
+    price: Optional[int] = None
+    group: Group = Group.EMPTY
+
+
+class Shirt(Struct):
+    id: str
+    index: int
+    mask: int
+    level: int
+    name: FormatLanguage
+    hidden: bool = False
+    desc: Optional[FormatLanguage] = None
+    price: Optional[int] = None
+    group: Group = Group.EMPTY
+
+
+class Assets(Struct):
+    smile: List[Smile]
+    shirt: List[Shirt]
+
+
+class ItemPrice(Struct):
+    id: str
+    name: dict
+    price: int = None
+    quantity: int = None
+    money: int = None
+    link: str = None
+
+
+class ItemsPrice(Struct):
+    ids: List[ItemPrice]
+
+
+class PurchaseIds(Struct):
+    ids: List
+
+
+class Bets(Struct):
+    v: List
+
+
+class Game(Struct):
+    id: int
+    players: int
+    position: int
+    deck: int
+    timeout: int
+    sw: bool
+    ch: bool
+    dr: bool
+    nb: bool
+    bet: int
+    fast: bool
+    
+    
+class Message(Struct, rename={"_from": "from"}):
+    id: int
+    dtc: str
+    _from: int
+    to: int
+    msg: str
+    kind: Optional[str] = None
+    payload: Optional[str] = None
+
+
+class Conversation(Struct):
+    id: int
+    begin: bool
+    users: dict
+    data: List[Message]
+    
+class LeaderboardUser(Struct):
+    user_id: int
+    name: str
+    dtp: str
+    avatar: Optional[str]
+    score: int
+    count: int
+    place: int
+    pw: int
+    frame: str
+    achieve: str
+    
+
+class Leaderboard(Struct):
+    type: str
+    kind: str
+    rows: List[LeaderboardUser]
+
+
+class GameInList(Struct):
+    id: int
+    p: int
+    cp: int
+    bet: int
+    name: str
+    pr: bool
+    nb: bool
+    dr: bool
+    sw: bool
+    ch: bool
+    fast: bool

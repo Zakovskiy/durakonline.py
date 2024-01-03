@@ -2,42 +2,35 @@ import sys
 import socket
 import json
 import threading
-from .utils import objects
+
 from datetime import datetime
 from loguru import logger
-from .socket_listener import SocketListener
+from msgspec.json import decode
 
+from .socket_listener import SocketListener
+from .utils import objects
 from .authorization import Authorization
 from .game import Game
 from .friend import Friend
 
 
 class Client(SocketListener):
-
-    def __init__(self, token: str = None, server_id: str = None, pl: str = "ios",
-        debug: bool = False, tag: str = "", ip: str = None,
-        port: int = None) -> None:
+    def __init__(self, server_id: str = None, debug: bool = False,
+        tag: str = "", ip: str = None, port: int = None) -> None:
         super().__init__(self)
-        self.api_url = "http://static.rstgames.com/durak/"
-        self.pl = pl
-        self.tag = tag
-        self.uid = None
-        self.receive = []
-        self.info = {}
+        self.api_url: str = "http://static.rstgames.com/durak/"
+        self.tag: str = tag
+        self.uid: int = None
+        self.receive: list = []
+        self.info: dict = {}
         self.logger = logger
         self.logger.remove()
         self.logger.add(sys.stderr, format="{time:HH:mm:ss.SSS}: {message}", level="DEBUG" if debug else "INFO")
         self.create_connection(server_id, ip, port)
-        self.load_classes()
-        self.authorization.sign(self.authorization.get_session_key().key)
-
-        if token:
-            self.authorization.signin_by_access_token(token)
-
-    def load_classes(self) -> None:
         self.authorization: Authorization = Authorization(self)
         self.game: Game = Game(self)
         self.friend: Friend = Friend(self)
+        self.authorization.sign(self.authorization.get_session_key().key)
 
     def get_user_info(self, user_id: int) -> objects.UserInfo:
         self.send_server(
@@ -49,7 +42,7 @@ class Client(SocketListener):
         data = self._get_data("user_info")
         if data["command"] != "user_info":
             raise objects.Err(data)
-        return objects.UserInfo(data).UserInfo
+        return decode(json.dumps(data), type=objects.UserInfo)
 
     def verify_purchase(self, signature, purchase_data) -> None:
         self.send_server(
@@ -66,7 +59,8 @@ class Client(SocketListener):
                 "command": "get_android_purchase_ids"
             }
         )
-        return objects.PurchaseIds(self._get_data("android_purchase_ids")).PurchaseIds
+        response = self._get_data("android_purchase_ids")
+        return decode(json.dumps(response), type=objects.PurchaseIds)
 
     def get_prem_price(self) -> objects.ItemsPrice:
         self.send_server(
@@ -74,7 +68,8 @@ class Client(SocketListener):
                 "command": "get_prem_price"
             }
         )
-        return objects.ItemsPrice(self._get_data("prem_price")).ItemsPrice
+        response = self._get_data("prem_price")
+        return decode(json.dumps(response), type=objects.ItemsPrice)
 
     def get_points_price(self) -> objects.ItemsPrice:
         self.send_server(
@@ -82,7 +77,8 @@ class Client(SocketListener):
                 "command": "get_points_price"
             }
         )
-        return objects.ItemsPrice(self._get_data("points_price")).ItemsPrice
+        response = self._get_data("points_price")
+        return decode(json.dumps(response), type=objects.ItemsPrice)
 
     def buy_prem(self, id: int = 0) -> None:
         self.send_server(
@@ -102,7 +98,7 @@ class Client(SocketListener):
 
         return self.listen()
 
-    def buy_asset(self, asset_id) -> None:
+    def buy_asset(self, asset_id: str) -> None:
         self.send_server(
             {
                 "command": "buy_asset",
@@ -116,17 +112,19 @@ class Client(SocketListener):
                 "command": "get_assets"
             }
         )
-        return objects.Assets(self._get_data("assets")).Assets
+        response = self._get_data("assets")
+        return decode(json.dumps(response), type=objects.Assets)
 
-    def asset_select(self, asset_id) -> None:
+    def asset_select(self, asset_id: str) -> None:
         self.send_server(
             {
                 "command": "asset_select",
                 "id": asset_id
             }
         )
+        return self._get_data("uu")
 
-    def achieve_select(self, achieve_id) -> None:
+    def achieve_select(self, achieve_id: str) -> None:
         self.send_server(
             {
                 "command": "achieve_select",
@@ -134,28 +132,29 @@ class Client(SocketListener):
             }
         )
 
-    def complaint(self, to_id) -> None:
+    def get_achieves(self) -> list:
+        self.send_server(
+            {
+                "command": "get_achieves",
+            }
+        )
+        response = self._get_data("achieves")
+        return decode(json.dumps(response), type=objects.Achieves)
+
+    def complaint(self, user_id: int) -> None:
         self.send_server(
             {
                 "command": "complaint",
-                "id": to_id,
+                "id": user_id,
             }
         )
 
-    def send_user_message_code(self, code, content) -> None:
+    def send_user_message_code(self, code: str, content: str) -> None:
         self.send_server(
             {
                 "command": "send_user_msg_code",
                 "code": code,
                 "msg": content
-            }
-        )
-
-    def delete_message(self, message_id) -> None:
-        self.send_server(
-            {
-                "command": "delete_msg",
-                "msg_id": message_id
             }
         )
 
@@ -176,34 +175,8 @@ class Client(SocketListener):
                 "command": "gb"
             }
         )
-        return objects.Bets(self._get_data("bets")).Bets
-
-    def lookup_start(self, betMin: int = 100, pr: bool = False, betMax: int = 2500,
-        fast: bool = True, sw: bool = True, nb: list = [False, True], ch: bool = False,
-        players: list = [2, 3, 4, 5, 6], deck: list = [24, 36, 52], dr: bool = True) -> None:
-        self.send_server(
-            {
-                "command": "lookup_start",
-                "betMin": betMin,
-                "pr": [pr, False],
-                "betMax": betMax,
-                "fast": [fast],
-                "sw": [sw],
-                "nb": nb,
-                "ch": [ch],
-                "players": players,
-                "deck": deck,
-                "dr": [dr],
-                "status": "open"
-            }
-        )
-
-    def lookup_stop(self) -> None:
-        self.send_server(
-            {
-                "command": "lookup_stop"
-            }
-        )
+        response = self._get_data("bets")
+        return decode(json.dumps(response), type=objects.Bets)
 
     def get_server(self) -> None:
         self.send_server(
@@ -230,7 +203,7 @@ class Client(SocketListener):
             }
         )
 
-    def leaderboard_get_by_user(self, user_id, type: str = "score", season: bool = False) -> dict:
+    def leaderboard_get_by_user(self, user_id: int, type: str = "score", season: bool = False) -> objects.Leaderboard:
         s = "" if not season else "s_"
         self.send_server(
             {
@@ -239,23 +212,28 @@ class Client(SocketListener):
                 "type": type
             }
         )
-        return self._get_data("lb")
+        response = self._get_data("lb")
+        return decode(json.dumps(response), type=objects.Leaderboard)
 
-    def leaderboard_get_top(self, type: str = "score") -> dict:
+    def leaderboard_get_top(self, type: str = "score", season: bool = False) -> objects.Leaderboard:
+        s = "" if not season else "s_"
         self.send_server(
             {
-                "command": "lb_get_top",
+                "command": f"{s}lb_get_top",
                 "type": type
             }
         )
-        return self._get_data("lb")
+        response = self._get_data("lb")
+        return decode(json.dumps(response), type=objects.Leaderboard)
 
-    def leaderboard_get_by_place_down(self, place: int = 20, type: str = "score") -> dict:
+    def leaderboard_get_by_place_down(self, place: int = 20, type: str = "score", season: bool = False) -> objects.Leaderboard:
+        s = "" if not season else "s_"
         self.send_server(
             {
-                "command": "lb_get_by_place_down",
+                "command": f"{s}lb_get_by_place_down",
                 "place": place,
                 "type": type
             }
         )
-        return self._get_data("lb")
+        response = self._get_data("lb")
+        return decode(json.dumps(response), type=objects.Leaderboard)

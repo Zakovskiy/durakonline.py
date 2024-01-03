@@ -1,12 +1,13 @@
+import json
+from msgspec.json import decode
 from .utils import objects
-
+from typing import List
 
 class Game:
-
     def __init__(self, client):
         self.client = client
 
-    def create(self, bet, password: str = "", players: int = 6,
+    def create(self, bet: int = 100, password: str = "", players: int = 2,
         deck: int = 24, fast: bool = False, sw: bool = True,
         nb: bool = True, ch: bool = False, dr: bool = True) -> objects.Game:
         self.client.send_server(
@@ -27,9 +28,9 @@ class Game:
         data = self.client._get_data("game")
         if data["command"] == 'err':
             raise objects.Err(data)
-        return objects.Game(data).Game
+        return decode(json.dumps(data), type=objects.Game)
 
-    def join(self, password: str, game_id) -> None:
+    def join(self, password: str, game_id: int) -> None:
         self.client.send_server(
             {
                 "command": "join",
@@ -37,8 +38,12 @@ class Game:
                 "id": game_id,
             }
         )
+        data = self.client._get_data("game")
+        if data["command"] in ["err", "alert"]:
+            raise objects.Err(data)
+        return decode(json.dumps(data), type=objects.Game)
 
-    def invite(self, user_id):
+    def invite(self, user_id: int):
         self.client.send_server(
             {
                 "command": "invite_to_game",
@@ -46,7 +51,7 @@ class Game:
             }
         )
 
-    def rejoin(self, position, game_id) -> None:
+    def rejoin(self, position: int, game_id: int) -> objects.Game:
         self.client.send_server(
             {
                 "command": "rejoin",
@@ -54,14 +59,19 @@ class Game:
                 "id": game_id,
             }
         )
+        data = self.client._get_data("game")
+        if data["command"] == 'err':
+            raise objects.Err(data)
+        return decode(json.dumps(data), type=objects.Game)
 
-    def leave(self, game_id) -> None:
-        self.client.send_server(
-            {
-                "command": "leave",
-                "id": game_id,
-            }
-        )
+    def leave(self, game_id: int = None) -> dict:
+        data = {
+            "command": "leave",
+        }
+        if game_id:
+            data["id"] = game_id
+        self.client.send_server(data)
+        return self.client._get_data("uu")
 
     def publish(self) -> None:
         return self.client.send_server(
@@ -93,7 +103,7 @@ class Game:
         )
 
     def player_swap(self, position: int) -> None:
-        self.send_server(
+        self.client.send_server(
             {
                 "command": "player_swap",
                 "id": position,
@@ -119,5 +129,37 @@ class Game:
         self.client.send_server(
             {
                 "command": "pass",
+            }
+        )
+        
+    def lookup_start(self, betMin: int = 100, pr: bool = False, betMax: int = 2500,
+        fast: bool = True, sw: bool = True, nb: list = [False, True], ch: bool = False,
+        players: list = [2, 3, 4, 5, 6], deck: list = [24, 36, 52], dr: bool = True) -> List[objects.GameInList]:
+        self.client.send_server(
+            {
+                "command": "lookup_start",
+                "betMin": betMin,
+                "pr": [pr, False],
+                "betMax": betMax,
+                "fast": [fast],
+                "sw": [sw],
+                "nb": nb,
+                "ch": [ch],
+                "players": players,
+                "deck": deck,
+                "dr": [dr],
+                "status": "open"
+            }
+        )
+        response = self.client._get_data("gl")
+        games: List[objects.GameInList] = []
+        for game in response.get("g", []):
+            games.append(decode(json.dumps(game), type=objects.GameInList))
+        return games
+
+    def lookup_stop(self) -> None:
+        self.client.send_server(
+            {
+                "command": "lookup_stop"
             }
         )

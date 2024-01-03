@@ -6,7 +6,6 @@ import random
 
 
 class SocketListener:
-
     def __init__(self, client):
         self.client = client
         self.alive = False
@@ -44,6 +43,7 @@ class SocketListener:
         except Exception as e:
             if "error" in self.handlers:
                 self.handlers["error"](e)
+            return
         self.alive = True
         threading.Thread(target=self.receive_messages).start()
 
@@ -60,6 +60,7 @@ class SocketListener:
         except Exception as e:
             if "error" in self.handlers:
                 self.handlers["error"](e)
+            return
         return response
 
     def event(self, command: str = "all"):
@@ -123,16 +124,16 @@ class SocketListener:
                     return
 
     def listen(self, force: bool = False):
-        while len(self.receive) == 0:
+        while not self.receive:
             if force:
                 return {"command": "empty"}
-        r = self.receive[0]
+        response = self.receive[0]
         del self.receive[0]
-        return r
+        return response
 
     def _get_data(self, type, force: bool = False):
         data = self.listen(force=force)
-        while 1:
+        while True:
             if data["command"] in [type, "err", "empty", "alert"]:
                 return data
             data = self.listen(force=force)

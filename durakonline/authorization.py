@@ -1,39 +1,42 @@
 import base64
 import hashlib
+import json
+from msgspec.json import decode
 from datetime import datetime
 from .utils import objects
 
 
 class Authorization:
-
-    def __init__(self, client) -> None:
+    def __init__(self, client, platform: str = "ios") -> None:
         self.client = client
-
+        self.platform = platform
+        
     def get_session_key(self) -> objects.GetSessionKey:
         data = {
             "command": "c",
             "l": "ru",
             "tz": "+02:00",
             "t": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]+"Z",
-            "pl": self.client.pl,
+            "pl": self.platform,
             "p": 10,
         }
-        if self.client.pl == "ios":
+        if self.platform == "ios":
             data.update({
-                "v": "1.9.1.2",
+                "v": "1.9.1.5",
                 "ios": "14.4",
                 "d": "iPhone8,4",
                 "n": "durak.ios",
             })
         else:
             data.update({
-                "v": "1.9.2",
+                "v": "1.9.15",
                 "d": "xiaomi cactus",
                 "and": 28,
-                "n": f"durak.{self.client.pl}",
+                "n": f"durak.{self.platform}",
             })
         self.client.send_server(data)
-        return objects.GetSessionKey(self.client.listen()).GetSessionKey
+        response = self.client.listen()
+        return decode(json.dumps(response), type=objects.GetSessionKey)
 
     def sign(self, key: str) -> dict:
         hash = base64.b64encode(hashlib.md5((key+"oc3q7ingf978mx457fgk4587fg847").encode()).digest()).decode()
@@ -82,7 +85,7 @@ class Authorization:
         )
         return self.client._get_data("captcha")
 
-    def register(self, name, captcha: str = '') -> objects.Register:
+    def register(self, name: str, captcha: str = '') -> objects.Register:
         self.client.send_server(
             {
                 "command": "register",
@@ -90,4 +93,5 @@ class Authorization:
                 "captcha": captcha,
             }
         )
-        return objects.Register(self.client._get_data("set_token")).Register
+        response = self.client._get_data("set_token")
+        return decode(json.dumps(response), type=objects.Register)
