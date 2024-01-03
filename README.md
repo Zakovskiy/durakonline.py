@@ -6,7 +6,9 @@
   Durak Online API on Python
   <br>
 </h1>
-
+<p align="center">
+    <em><b>A customizable, fast and user-friendly framework for working with the Durak Online</b></em>
+</p>
 <p align="center">
   <a href="https://t.me/zakovskiy"><img src="https://kdramashindi.net/wp-content/uploads/2023/08/Telegram-1024x396.jpg"></a>
   <img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/durakonline.py">
@@ -14,17 +16,23 @@
   <img alt="PyPI" src="https://img.shields.io/pypi/v/durakonline.py?color=green&label=PyPI">
 </p>
 
-# Install
-```
-pip3 install durakonline.py
+## Install
+You can install the latest version using the command:
+
+```shell
+pip install durakonline.py
 ```
 
-# Import and Auth
+## Import and Auth
 ```python
 from durakonline import durakonline
 
 client = durakonline.Client()
 client.authorization.signin_by_access_token("access token")
 ```
+[See more examples!](https://github.com/Zakovskiy/durakonline.py/tree/master/examples)
 
-### [Telegram](https://t.me/zakovskiy)
+## Contributing
+
+PR is supported! We are pleased to see your contribution to the development of the framework.\
+Ask questions in the Issues block or in the [**Telegram**](https://t.me/zakovskiy)!
