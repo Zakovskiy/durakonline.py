@@ -30,6 +30,8 @@ from durakonline import durakonline
 client = durakonline.Client()
 client.authorization.signin_by_access_token("access token")
 ```
+[How to get a token](https://github.com/Zakovskiy/durakonline.py/tree/master/docs)
+<br>
 [See more examples!](https://github.com/Zakovskiy/durakonline.py/tree/master/examples)
 
 ## Contributing
