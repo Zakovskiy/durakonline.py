@@ -5,7 +5,7 @@ with open("README.md", "r") as stream:
 
 setup(
     name = "durakonline.py",
-    version = "3.5.0",
+    version = "3.6.0",
     url = "https://github.com/Zakovskiy/durakonline.py",
     download_url = "https://github.com/Zakovskiy/durakonline.py/tarball/master",
     license = "MIT",

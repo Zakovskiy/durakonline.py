@@ -1,24 +1,26 @@
 import sys
 import socket
 import json
-import threading
 
-from datetime import datetime
 from loguru import logger
 from msgspec.json import decode
 
 from .socket_listener import SocketListener
-from .utils import objects
+from .utils import objects, Server
 from .authorization import Authorization
 from .game import Game
 from .friend import Friend
 
 
 class Client(SocketListener):
-    def __init__(self, server_id: str = None, debug: bool = False,
-        tag: str = "", ip: str = None, port: int = None) -> None:
-        super().__init__(self)
-        self.api_url: str = "http://static.rstgames.com/durak/"
+    def __init__(self, server_id: Server = None, debug: bool = False, tag: str = "",
+                 ip: str = None, port: int = None, proxy: str = "") -> None:
+        """
+
+        :param proxy:
+            proxy by format "login@password:ip:port"
+        """
+        super().__init__(self, proxy)
         self.tag: str = tag
         self.uid: int = None
         self.receive: list = []
@@ -27,10 +29,20 @@ class Client(SocketListener):
         self.logger.remove()
         self.logger.add(sys.stderr, format="{time:HH:mm:ss.SSS}: {message}", level="DEBUG" if debug else "INFO")
         self.create_connection(server_id, ip, port)
+
         self.authorization: Authorization = Authorization(self)
         self.game: Game = Game(self)
         self.friend: Friend = Friend(self)
+
         self.authorization.sign(self.authorization.get_session_key().key)
+
+    def update_avatar(self, file: str) -> None:
+        self.send_server(
+            {
+                "command": "update_avatar",
+                "base64": file
+            }
+        )
 
     def get_user_info(self, user_id: int) -> objects.UserInfo:
         self.send_server(
@@ -53,7 +65,7 @@ class Client(SocketListener):
             }
         )
 
-    def get_purchase_ids(self) -> None:
+    def get_purchase_ids(self) -> objects.PurchaseIds:
         self.send_server(
             {
                 "command": "get_android_purchase_ids"
@@ -237,3 +249,9 @@ class Client(SocketListener):
         )
         response = self._get_data("lb")
         return decode(json.dumps(response), type=objects.Leaderboard)
+
+    def __del__(self):
+        if self.alive:
+            self.socket.shutdown(socket.SHUT_RDWR)
+            self.socket.close()
+            self.alive = False

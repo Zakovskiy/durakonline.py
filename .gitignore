@@ -1,3 +1,4 @@
+.idea
 durakonline/__pycache__
-utils/__pycache__
+durakonline/utils/__pycache__
 test.py

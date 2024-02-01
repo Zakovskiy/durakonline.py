@@ -39,11 +39,11 @@ class Authorization:
         return decode(json.dumps(response), type=objects.GetSessionKey)
 
     def sign(self, key: str) -> dict:
-        hash = base64.b64encode(hashlib.md5((key+"oc3q7ingf978mx457fgk4587fg847").encode()).digest()).decode()
+        secret = base64.b64encode(hashlib.md5((key + "oc3q7ingf978mx457fgk4587fg847").encode()).digest()).decode()
         self.client.send_server(
             {
                 "command": "sign",
-                "hash": hash,
+                "hash": secret,
             }
         )
         return self.client.listen()
