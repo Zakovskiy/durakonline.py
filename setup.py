@@ -5,12 +5,12 @@ with open("README.md", "r") as stream:
 
 setup(
     name = "durakonline.py",
-    version = "3.6.0",
+    version = "3.7.0",
     url = "https://github.com/Zakovskiy/durakonline.py",
     download_url = "https://github.com/Zakovskiy/durakonline.py/tarball/master",
     license = "MIT",
     author = "Zakovskiy",
-    author_email = "gogrugu@gmail.com",
+    author_email = "me@zakovskiy.website",
     description = "A library to create Durak Online bots.",
     long_description = long_description,
     long_description_content_type = "text/markdown",
@@ -34,7 +34,7 @@ setup(
         "setuptools",
         "requests",
         "loguru",
-        "aiohttp",
+        "SocksiPy_branch",
         "msgspec"
     ],
     setup_requires = [

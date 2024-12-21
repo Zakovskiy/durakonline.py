@@ -3,6 +3,7 @@ from msgspec.json import decode
 from .utils import objects
 from typing import List
 
+
 class Game:
     def __init__(self, client):
         self.client = client
@@ -21,7 +22,7 @@ class Game:
                 "ch": ch,
                 "players": players,
                 "deck": deck,
-                "dr": dr,
+                "dr": dr
             }
         )
 
@@ -30,16 +31,18 @@ class Game:
             raise objects.Err(data)
         return decode(json.dumps(data), type=objects.Game)
 
-    def join(self, password: str, game_id: int) -> None:
-        self.client.send_server(
-            {
-                "command": "join",
-                "password": password,
-                "id": game_id,
-            }
-        )
-        data = self.client._get_data("game")
-        if data["command"] in ["err", "alert"]:
+    def join(self, password: str | None, game_id: int) -> objects.Game:
+        payload = {
+            'command': 'join',
+            'id': game_id
+        }
+
+        if password is not None:
+            payload['password'] = password
+
+        self.client.send_server(payload)
+        data = self.client._get_data('game')
+        if data['command'] in ['err', 'alert']:
             raise objects.Err(data)
         return decode(json.dumps(data), type=objects.Game)
 
@@ -47,7 +50,7 @@ class Game:
         self.client.send_server(
             {
                 "command": "invite_to_game",
-                "user_id": user_id,
+                "user_id": user_id
             }
         )
 
@@ -56,7 +59,7 @@ class Game:
             {
                 "command": "rejoin",
                 "p": position,
-                "id": game_id,
+                "id": game_id
             }
         )
         data = self.client._get_data("game")
@@ -64,7 +67,7 @@ class Game:
             raise objects.Err(data)
         return decode(json.dumps(data), type=objects.Game)
 
-    def leave(self, game_id: int = None) -> dict:
+    def leave(self, game_id: int | None = None) -> dict:
         data = {
             "command": "leave",
         }
@@ -76,7 +79,7 @@ class Game:
     def publish(self) -> None:
         return self.client.send_server(
             {
-                "command": "game_publish",
+                "command": "game_publish"
             }
         )
 
@@ -84,21 +87,21 @@ class Game:
         self.client.send_server(
             {
                 "command": "smile",
-                "id": smile_id,
+                "id": smile_id
             }
         )
 
     def ready(self) -> None:
         self.client.send_server(
             {
-                "command": "ready",
+                "command": "ready"
             }
         )
 
     def surrender(self) -> None:
         self.client.send_server(
             {
-                "command": "surrender",
+                "command": "surrender"
             }
         )
 
@@ -106,7 +109,7 @@ class Game:
         self.client.send_server(
             {
                 "command": "player_swap",
-                "id": position,
+                "id": position
             }
         )
 
@@ -114,24 +117,79 @@ class Game:
         self.client.send_server(
             {
                 "command": "t",
-                "c": card,
+                "c": card
+            }
+        )
+
+    def feed(self, card: str) -> None:
+        self.client.send_server(
+            {
+                'command': 'f',
+                'c': card,
             }
         )
 
     def take(self) -> None:
         self.client.send_server(
             {
-                "command": "take",
+                "command": "take"
             }
         )
 
-    def _pass(self) -> None:
+    def do_pass(self) -> None:
         self.client.send_server(
             {
-                "command": "pass",
+                "command": "pass"
             }
         )
-        
+    
+    def done(self) -> None:
+        self.client.send_server(
+            {
+                'command': 'done'
+            }
+        )
+    
+    def beat(self, card: str, card_to_beat: str) -> None:
+        self.client.send_server(
+            {
+                'command': 'b',
+                'c': card_to_beat,
+                'b': card,
+            }
+        )
+
+    def report_trick(self, card: str, card_beaten: str) -> None:
+        self.client.send_server(
+            {
+                'command': 'chb',
+                'c': card_beaten,
+                'b': card,
+            }
+        )
+
+    def forward_card(self, card: str) -> None:
+        self.client.send_server(
+            {
+                'command': 's',
+                'c': card
+            }
+        )
+
+    def get_hands(self) -> None:
+        self.client.send_server(
+            {
+                'command': 'get_hands'
+            }
+        )
+
+    def get_table(self) -> None:
+        self.client.send_server(
+            {
+                'command': 'get_table'
+            }
+        )
+
     def lookup_start(self, betMin: int = 100, pr: bool = False, betMax: int = 2500,
         fast: bool = True, sw: bool = True, nb: list = [False, True], ch: bool = False,
         players: list = [2, 3, 4, 5, 6], deck: list = [24, 36, 52], dr: bool = True) -> List[objects.GameInList]:
