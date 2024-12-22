@@ -1,10 +1,11 @@
+import atexit
 import socket
 import socks
 import json
 import requests
 import threading
 import random
-
+from queue import Queue
 from durakonline.utils import Server
 
 
@@ -15,7 +16,9 @@ class SocketListener:
         self.alive = False
         self.api_url: str = "http://static.rstgames.com/durak/"
         self.socket = None
+        self.receive: Queue = Queue()
         self.handlers = {}
+        self.thread = None
 
     def create_connection(self, server_id: Server = None, ip: str = None, port: int = None):
         if not ip:
@@ -37,16 +40,19 @@ class SocketListener:
                 self.handlers["error"](e)
             return
         self.alive = True
-        threading.Thread(target=self.receive_messages).start()
+        self.thread = threading.Thread(target=self.receive_messages)
+        self.thread.start()
 
     def send_server(self, data: dir):
+        if not self.socket:
+            raise ValueError('Socket not created')
         try:
             self.socket.send((data.pop('command')+json.dumps(data, separators=(',', ':')).replace("{}", '')+'\n').encode())
         except Exception as e:
             if "error" in self.handlers:
                 self.handlers["error"](e)
 
-    def get_servers(self):
+    def get_servers(self) -> dict:
         try:
             response = requests.get(f"{self.api_url}servers.json").json()
         except Exception as e:
@@ -74,12 +80,16 @@ class SocketListener:
 
     def receive_messages(self):
         self.logger.debug(f"{self.tag}: Start listener")
+        _ = [x() for x in self.handlers.get('init', [])]
+
         while self.alive:
             buffer = bytes()
             while self.alive:
                 try:
                     r = self.socket.recv(4096)
                 except Exception as e:
+                    if not self.alive:
+                        break
                     if "error" in self.handlers:
                         self.handlers["error"](e)
                     self.alive = False
@@ -91,7 +101,7 @@ class SocketListener:
                         continue
                     try:
                         d = buffer.decode()
-                    except:
+                    except UnicodeDecodeError:
                         continue
                     if d.endswith('\n'):
                         buffer = bytes()
@@ -101,7 +111,7 @@ class SocketListener:
                             command = message_str[:pos]
                             try:
                                 message = json.loads(message_str[pos:]+"}")
-                            except Exception as e:
+                            except Exception:
                                 continue
                             message['command'] = command
                             self.logger.debug(f"{self.tag}: {message}")
@@ -109,24 +119,41 @@ class SocketListener:
                                 if handler_command in ["all", command]:
                                     for handler in self.handlers[handler_command]:
                                         handler(message)
-                            self.receive.append(message)
+                            self.receive.put(message)
                     else:
                         continue
                 else:
                     self.socket.close()
                     return
 
-    def listen(self, force: bool = False):
-        while not self.receive:
-            if force:
-                return {"command": "empty"}
-        response = self.receive[0]
-        del self.receive[0]
+            _ = [x() for x in self.handlers.get('shutdown', [])]
+
+    def listen(self):
+        response = self.receive.get(timeout=5)
         return response
 
-    def _get_data(self, command: str, force: bool = False):
-        data = self.listen(force=force)
+    def _get_data(self, command: str):
+        data = self.listen()
         while True:
-            if data["command"] in [command, "err", "empty", "alert"]:
+            if data["command"] in [command, "err", "alert"]:
                 return data
-            data = self.listen(force=force)
+            data = self.listen()
+    
+    def shutdown(self) -> None:
+        if self.alive:
+            self.alive = False
+
+        if self.socket is not None:
+            self.socket.shutdown(socket.SHUT_RDWR)
+            self.socket.close()
+            self.socket = None
+
+        if self.thread is not None:
+            self.thread.join()
+            self.thread = None
+        
+        if not self.receive.is_shutdown:
+            self.receive.shutdown()
+
+    def __del__(self) -> None:
+        atexit.unregister(self.shutdown)

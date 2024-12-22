@@ -23,7 +23,6 @@ class Client(SocketListener):
         super().__init__(self, proxy)
         self.tag: str = tag
         self.uid: int = None
-        self.receive: list = []
         self.info: dict = {}
         self.logger = logger
         self.logger.remove()
@@ -147,7 +146,7 @@ class Client(SocketListener):
     def get_achieves(self) -> list:
         self.send_server(
             {
-                "command": "get_achieves",
+                "command": "get_achieves"
             }
         )
         response = self._get_data("achieves")
@@ -157,7 +156,7 @@ class Client(SocketListener):
         self.send_server(
             {
                 "command": "complaint",
-                "id": user_id,
+                "id": user_id
             }
         )
 
@@ -250,8 +249,8 @@ class Client(SocketListener):
         response = self._get_data("lb")
         return decode(json.dumps(response), type=objects.Leaderboard)
 
+    def shutdown(self):
+        super().shutdown()
+
     def __del__(self):
-        if self.alive:
-            self.socket.shutdown(socket.SHUT_RDWR)
-            self.socket.close()
-            self.alive = False
+        self.shutdown()
