@@ -132,12 +132,12 @@ class SocketListener:
         response = self.receive.get(timeout=5)
         return response
 
-    def _get_data(self, command: str, force: bool = False):
-        data = self.listen(force=force)
+    def _get_data(self, command: str):
+        data = self.listen()
         while True:
             if data["command"] in [command, "err", "alert"]:
                 return data
-            data = self.listen(force=force)
+            data = self.listen()
     
     def shutdown(self) -> None:
         if self.alive:

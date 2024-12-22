@@ -2,7 +2,7 @@ __title__ = "durakonline.py"
 __author__ = "Zakovskiy"
 __license__ = "MIT"
 __copyright__ = "Copyright 2021-2025 Zakovskiy"
-__version__ = "3.7.0"
+__version__ = "3.7.1"
 
 from .durakonline import Client
 from .authorization import Authorization

@@ -1,7 +1,7 @@
 import json
 from msgspec.json import decode
 from .utils import objects
-from typing import List
+from typing import List, Union
 
 
 class Game:
@@ -31,7 +31,7 @@ class Game:
             raise objects.Err(data)
         return decode(json.dumps(data), type=objects.Game)
 
-    def join(self, password: str | None, game_id: int) -> objects.Game:
+    def join(self, password: Union[str, None], game_id: int) -> objects.Game:
         payload = {
             'command': 'join',
             'id': game_id
@@ -67,7 +67,7 @@ class Game:
             raise objects.Err(data)
         return decode(json.dumps(data), type=objects.Game)
 
-    def leave(self, game_id: int | None = None) -> dict:
+    def leave(self, game_id: Union[int, None] = None) -> dict:
         data = {
             "command": "leave",
         }
